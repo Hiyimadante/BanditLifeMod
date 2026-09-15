@@ -98,11 +98,9 @@ namespace BanditLifeMod.Behaviors
             if (MobileParty.MainParty == null)
                 return;
 
-            var playerPos = MobileParty.MainParty.Position2D;
             var nearbyParties = MobileParty.All
                 .Where(p => p != MobileParty.MainParty && 
                        (p.IsBandit || (p.LeaderHero != null && p.LeaderHero.Occupation == Occupation.Bandit)))
-                .Where(p => p.Position2D.DistanceSquared(playerPos) < 25)
                 .ToList();
 
             foreach (var banditParty in nearbyParties)
