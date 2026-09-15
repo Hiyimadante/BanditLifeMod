@@ -1,0 +1,10 @@
+*.dll
+*.pdb
+bin/
+obj/
+.vs/
+.vscode/
+*.user
+*.suo
+.DS_Store
+Thumbs.db
