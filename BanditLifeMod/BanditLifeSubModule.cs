@@ -38,15 +38,14 @@ namespace BanditLifeMod
                 "hideout",
                 "bandit_life_option",
                 "{=bandit_option}Unirse a la vida de bandido",
-                GameMenuCallbackDelegate.CreateFromFunction(
-                    new GameMenuCallbackDelegate.OnConditionDelegate((args) => true),
-                    new GameMenuCallbackDelegate.OnConsequenceDelegate((args) =>
+                new GameMenuOption.OnConditionDelegate((args) => true),
+                new GameMenuOption.OnConsequenceDelegate((args) =>
+                {
+                    if (_banditLifeBehavior != null)
                     {
-                        if (_banditLifeBehavior != null)
-                        {
-                            _banditLifeBehavior.BecomeBandit();
-                        }
-                    })),
+                        _banditLifeBehavior.BecomeBandit();
+                    }
+                }),
                 false,
                 -1,
                 false);
