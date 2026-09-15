@@ -17,9 +17,8 @@ namespace BanditLifeMod.Behaviors
 
         public override void RegisterEvents()
         {
-            CampaignEvents.OnSettlementLeftEvent.AddNonSerializedListener(this, OnSettlementLeft);
             CampaignEvents.DailyTickEvent.AddNonSerializedListener(this, OnDailyTick);
-            CampaignEvents.OnPartyInteraction.AddNonSerializedListener(this, OnPartyInteraction);
+            CampaignEvents.MobilePartyCreated.AddNonSerializedListener(this, OnMobilePartyCreated);
         }
 
         public override void SyncData(IDataStore dataStore)
@@ -81,14 +80,6 @@ namespace BanditLifeMod.Behaviors
             }
         }
 
-        private void OnSettlementLeft(Settlement settlement, MobileParty mobileParty)
-        {
-            if (mobileParty?.LeaderHero == Hero.MainHero && _isBandit)
-            {
-                ApplyBanditEffects();
-            }
-        }
-
         private void OnDailyTick()
         {
             if (!_isBandit || Hero.MainHero == null)
@@ -98,32 +89,38 @@ namespace BanditLifeMod.Behaviors
             if (playerParty != null)
             {
                 EnforceBanditLife();
+                CheckForBanditParties();
             }
         }
 
-        private void OnPartyInteraction(MobileParty mobileParty)
+        private void CheckForBanditParties()
         {
-            if (!_isBandit || mobileParty == null)
+            if (MobileParty.MainParty == null)
                 return;
 
-            if (mobileParty.IsBandit || (mobileParty.LeaderHero != null && 
-                mobileParty.LeaderHero.Occupation == Occupation.Bandit))
+            var nearbyParties = MobileParty.All
+                .Where(p => p != MobileParty.MainParty && 
+                       (p.IsBandit || (p.LeaderHero != null && p.LeaderHero.Occupation == Occupation.Bandit)))
+                .Where(p => p.Position2D.DistanceSquared(MobileParty.MainParty.Position2D) < 25)
+                .ToList();
+
+            foreach (var banditParty in nearbyParties)
             {
-                if (MobileParty.MainParty.Morale > mobileParty.Morale)
+                if (MobileParty.MainParty.MemberRoster.Count > banditParty.MemberRoster.Count)
                 {
-                    TransferBanditsToPlayerParty(mobileParty);
+                    TransferBanditsToPlayerParty(banditParty);
                 }
             }
         }
 
         private void TransferBanditsToPlayerParty(MobileParty banditParty)
         {
-            if (banditParty.MemberRoster.TotalMancount > 0)
+            if (banditParty.MemberRoster.Count > 0)
             {
-                var troopsToTransfer = (int)(banditParty.MemberRoster.TotalMancount * 0.3f);
-                troopsToTransfer = MBMath.ClampInt(troopsToTransfer, 1, banditParty.MemberRoster.TotalMancount - 1);
+                var troopsToTransfer = (int)(banditParty.MemberRoster.Count * 0.3f);
+                troopsToTransfer = MBMath.ClampInt(troopsToTransfer, 1, banditParty.MemberRoster.Count - 1);
 
-                for (int i = 0; i < troopsToTransfer; i++)
+                for (int i = 0; i < troopsToTransfer && banditParty.MemberRoster.Count > 1; i++)
                 {
                     var character = banditParty.MemberRoster.GetCharacterAtIndex(0);
                     if (character != null)
@@ -139,12 +136,9 @@ namespace BanditLifeMod.Behaviors
             }
         }
 
-        private void ApplyBanditEffects()
+        private void OnMobilePartyCreated(MobileParty mobileParty)
         {
-            if (MobileParty.MainParty != null)
-            {
-                MobileParty.MainParty.RecentlyBattled = false;
-            }
+            // Placeholder para futuros eventos
         }
 
         private void EnforceBanditLife()
